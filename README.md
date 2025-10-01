@@ -1,133 +1,158 @@
-# Waitlist Mini App Quickstart
+# TokenMinter - Base Network Token Creation dApp
 
-This is a demo Mini App application built using OnchainKit and the Farcaster SDK. Build a waitlist sign-up mini app for your company that can be published to the Base app and Farcaster.
+A Farcaster Mini App that allows users to create and deploy their own ERC-20 tokens on Base network in seconds.
 
-## Prerequisites
+## Features
 
-Before getting started, make sure you have:
+- 🚀 **Quick Token Creation**: Deploy ERC-20 tokens with a simple form
+- 🔗 **Base Network Integration**: Built specifically for Base mainnet
+- 📱 **Farcaster Native**: Seamless experience within Farcaster
+- 🎨 **Modern UI**: Beautiful, responsive interface
+- ✅ **Transaction Tracking**: Real-time transaction status and BaseScan links
+- 🔒 **Secure**: Uses industry-standard OpenZeppelin contracts
 
-* Base app account
-* A [Farcaster](https://farcaster.xyz/) account
-* [Vercel](https://vercel.com/) account for hosting the application
-* [Coinbase Developer Platform](https://portal.cdp.coinbase.com/) Client API Key
+## Token Parameters
+
+The app allows users to configure:
+- **Token Name**: Full name of the token
+- **Symbol**: Short ticker symbol (2-10 characters)
+- **Total Supply**: Number of tokens to mint
+- **Decimals**: Number of decimal places (0-18, 18 is standard)
+- **Description**: Optional description for the token
 
 ## Getting Started
 
-### 1. Clone this repository 
+### Prerequisites
 
+- Node.js 18+ 
+- npm or yarn
+- OnChainKit API key from [Coinbase Developer Portal](https://portal.cdp.coinbase.com/products/onchainkit)
+
+### Installation
+
+1. Clone the repository:
 ```bash
-git clone https://github.com/base/demos.git
+git clone <your-repo-url>
+cd new-mini-app-quickstart
 ```
 
-### 2. Install dependencies:
-
+2. Install dependencies:
 ```bash
-cd demos/minikit/waitlist-mini-app-qs
 npm install
 ```
 
-### 3. Configure environment variables
-
-Create a `.env.local` file and add your environment variables:
-
+3. Set up environment variables:
 ```bash
-NEXT_PUBLIC_PROJECT_NAME="Your App Name"
-NEXT_PUBLIC_ONCHAINKIT_API_KEY=<Replace-WITH-YOUR-CDP-API-KEY>
-NEXT_PUBLIC_URL=
+cp .env.example .env.local
 ```
 
-### 4. Run locally:
+Edit `.env.local` with your configuration:
+```env
+NEXT_PUBLIC_ONCHAINKIT_API_KEY=your_onchainkit_api_key_here
+NEXT_PUBLIC_URL=http://localhost:3000
+```
 
+### Deploy TokenFactory Contract (Required)
+
+Before users can mint tokens, you need to deploy the TokenFactory contract to Base network:
+
+1. Install Hardhat dependencies:
+```bash
+npm install @nomicfoundation/hardhat-toolbox
+```
+
+2. Set up deployment environment:
+```env
+PRIVATE_KEY=your_private_key_here
+BASESCAN_API_KEY=your_basescan_api_key_here
+```
+
+3. Deploy to Base testnet (recommended first):
+```bash
+npm run deploy:base-testnet
+```
+
+4. Deploy to Base mainnet:
+```bash
+npm run deploy:base
+```
+
+5. Update the factory address in `app/page.tsx`:
+```typescript
+const factoryAddress = "YOUR_DEPLOYED_FACTORY_ADDRESS";
+```
+
+### Development
+
+Start the development server:
 ```bash
 npm run dev
 ```
 
-## Customization
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Update Manifest Configuration
-
-The `minikit.config.ts` file configures your manifest located at `app/.well-known/farcaster.json`.
-
-**Skip the `accountAssociation` object for now.**
-
-To personalize your app, change the `name`, `subtitle`, and `description` fields and add images to your `/public` folder. Then update their URLs in the file.
-
-## Deployment
-
-### 1. Deploy to Vercel
+### Building for Production
 
 ```bash
-vercel --prod
+npm run build
+npm start
 ```
 
-You should have a URL deployed to a domain similar to: `https://your-vercel-project-name.vercel.app/`
+## Smart Contract Details
 
-### 2. Update environment variables
+### TokenFactory Contract
 
-Add your production URL to your local `.env` file:
+The `TokenFactory` contract is deployed once and allows users to create new ERC-20 tokens:
 
-```bash
-NEXT_PUBLIC_PROJECT_NAME="Your App Name"
-NEXT_PUBLIC_ONCHAINKIT_API_KEY=<Replace-WITH-YOUR-CDP-API-KEY>
-NEXT_PUBLIC_URL=https://your-vercel-project-name.vercel.app/
-```
+- **Function**: `createToken(name, symbol, decimals, totalSupply)`
+- **Gas Cost**: ~2-3M gas per token creation
+- **Security**: Uses OpenZeppelin's audited ERC-20 implementation
 
-### 3. Upload environment variables to Vercel
+### SimpleToken Contract
 
-Add environment variables to your production environment:
+Each created token is an instance of `SimpleToken`:
+- Standard ERC-20 functionality
+- Configurable decimals
+- Total supply minted to creator
+- No additional features (keeping it simple and gas-efficient)
 
-```bash
-vercel env add NEXT_PUBLIC_PROJECT_NAME production
-vercel env add NEXT_PUBLIC_ONCHAINKIT_API_KEY production
-vercel env add NEXT_PUBLIC_URL production
-```
+## Farcaster Integration
 
-## Account Association
+This mini app is configured for Farcaster with:
+- Frame metadata for proper display
+- User authentication via Farcaster
+- Share functionality to promote tokens
+- Mobile-optimized interface
 
-### 1. Sign Your Manifest
+## Network Configuration
 
-1. Navigate to [Farcaster Manifest tool](https://farcaster.xyz/~/developers/mini-apps/manifest)
-2. Paste your domain in the form field (ex: your-vercel-project-name.vercel.app)
-3. Click the `Generate account association` button and follow the on-screen instructions for signing with your Farcaster wallet
-4. Copy the `accountAssociation` object
+- **Primary**: Base Mainnet (Chain ID: 8453)
+- **Testnet**: Base Sepolia (Chain ID: 84532)
+- **Explorer**: [BaseScan](https://basescan.org)
 
-### 2. Update Configuration
+## Security Considerations
 
-Update your `minikit.config.ts` file to include the `accountAssociation` object:
+- Factory contract is upgradeable by owner
+- Token creation requires gas fees
+- Users retain full control of created tokens
+- No admin functions on individual tokens
 
-```ts
-export const minikitConfig = {
-    accountAssociation: {
-        "header": "your-header-here",
-        "payload": "your-payload-here",
-        "signature": "your-signature-here"
-    },
-    frame: {
-        // ... rest of your frame configuration
-    },
-}
-```
+## Deployment Checklist
 
-### 3. Deploy Updates
+- [ ] Deploy TokenFactory to Base mainnet
+- [ ] Update factory address in frontend
+- [ ] Set up OnChainKit API key
+- [ ] Configure environment variables
+- [ ] Test token creation flow
+- [ ] Submit to Farcaster Mini Apps directory
 
-```bash
-vercel --prod
-```
+## Support
 
-## Testing and Publishing
+For issues or questions:
+- Check the [OnChainKit documentation](https://docs.cdp.coinbase.com/onchainkit/)
+- Review [Farcaster Mini Apps guide](https://miniapps.farcaster.xyz/)
+- Visit [Base network docs](https://docs.base.org/)
 
-### 1. Preview Your App
+## License
 
-Go to [base.dev/preview](https://base.dev/preview) to validate your app:
-
-1. Add your app URL to view the embeds and click the launch button to verify the app launches as expected
-2. Use the "Account association" tab to verify the association credentials were created correctly
-3. Use the "Metadata" tab to see the metadata added from the manifest and identify any missing fields
-
-### 2. Publish to Base App
-
-To publish your app, create a post in the Base app with your app's URL.
-
-## Learn More
-
-For detailed step-by-step instructions, see the [Create a Mini App tutorial](https://docs.base.org/docs/mini-apps/quickstart/create-new-miniapp/) in the Base documentation.
+MIT License - see LICENSE file for details.

@@ -1,87 +1,234 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useQuickAuth,useMiniKit } from "@coinbase/onchainkit/minikit";
+import { useQuickAuth, useMiniKit } from "@coinbase/onchainkit/minikit";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { parseEther, formatUnits } from "viem";
 import { useRouter } from "next/navigation";
 import { minikitConfig } from "../minikit.config";
 import styles from "./page.module.css";
 
+interface TokenParams {
+  name: string;
+  symbol: string;
+  decimals: number;
+  totalSupply: string;
+  description: string;
+}
+
 interface AuthResponse {
   success: boolean;
   user?: {
-    fid: number; // FID is the unique identifier for the user
+    fid: number;
     issuedAt?: number;
     expiresAt?: number;
   };
-  message?: string; // Error messages come as 'message' not 'error'
+  message?: string;
 }
 
+// Simple ERC-20 Token Contract ABI (minimal implementation)
+const TOKEN_CONTRACT_ABI = [
+  {
+    "inputs": [
+      {"internalType": "string", "name": "name", "type": "string"},
+      {"internalType": "string", "name": "symbol", "type": "string"},
+      {"internalType": "uint8", "name": "decimals", "type": "uint8"},
+      {"internalType": "uint256", "name": "totalSupply", "type": "uint256"}
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "owner", "type": "address"},
+      {"indexed": true, "internalType": "address", "name": "spender", "type": "address"},
+      {"indexed": false, "internalType": "uint256", "name": "value", "type": "uint256"}
+    ],
+    "name": "Approval",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "from", "type": "address"},
+      {"indexed": true, "internalType": "address", "name": "to", "type": "address"},
+      {"indexed": false, "internalType": "uint256", "name": "value", "type": "uint256"}
+    ],
+    "name": "Transfer",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "owner", "type": "address"},
+      {"internalType": "address", "name": "spender", "type": "address"}
+    ],
+    "name": "allowance",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "spender", "type": "address"},
+      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "approve",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
+    "name": "balanceOf",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "decimals",
+    "outputs": [{"internalType": "uint8", "name": "", "type": "uint8"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "name",
+    "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "symbol",
+    "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalSupply",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "to", "type": "address"},
+      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "transfer",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "from", "type": "address"},
+      {"internalType": "address", "name": "to", "type": "address"},
+      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "transferFrom",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+] as const;
 
 export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit();
-  const [email, setEmail] = useState("");
+  const { address, isConnected } = useAccount();
+  const [tokenParams, setTokenParams] = useState<TokenParams>({
+    name: "",
+    symbol: "",
+    decimals: 18,
+    totalSupply: "",
+    description: ""
+  });
   const [error, setError] = useState("");
-  const router = useRouter();
+  const [isMinting, setIsMinting] = useState(false);
+  const [mintedTokenAddress, setMintedTokenAddress] = useState<string>("");
 
-  // Initialize the  miniapp
+  const { data: hash, writeContract, isPending, error: contractError } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  // Initialize the miniapp
   useEffect(() => {
     if (!isFrameReady) {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady]);
- 
-  
-
-  // If you need to verify the user's identity, you can use the useQuickAuth hook.
-  // This hook will verify the user's signature and return the user's FID. You can update
-  // this to meet your needs. See the /app/api/auth/route.ts file for more details.
-  // Note: If you don't need to verify the user's identity, you can get their FID and other user data
-  // via `context.user.fid`.
-  // const { data, isLoading, error } = useQuickAuth<{
-  //   userFid: string;
-  // }>("/api/auth");
 
   const { data: authData, isLoading: isAuthLoading, error: authError } = useQuickAuth<AuthResponse>(
     "/api/auth",
     { method: "GET" }
   );
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    // Check authentication first
-    if (isAuthLoading) {
-      setError("Please wait while we verify your identity...");
-      return;
-    }
-
-    if (authError || !authData?.success) {
-      setError("Please authenticate to join the waitlist");
-      return;
-    }
-
-    if (!email) {
-      setError("Please enter your email address");
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
-
-    // TODO: Save email to database/API with user FID
-    console.log("Valid email submitted:", email);
-    console.log("User authenticated:", authData.user);
+  const validateTokenParams = (params: TokenParams): string | null => {
+    if (!params.name.trim()) return "Token name is required";
+    if (!params.symbol.trim()) return "Token symbol is required";
+    if (params.symbol.length < 2 || params.symbol.length > 10) return "Symbol must be 2-10 characters";
+    if (!params.totalSupply || params.totalSupply === "0") return "Total supply must be greater than 0";
+    if (params.decimals < 0 || params.decimals > 18) return "Decimals must be between 0 and 18";
     
-    // Navigate to success page
-    router.push("/success");
+    try {
+      parseEther(params.totalSupply);
+    } catch {
+      return "Invalid total supply format";
+    }
+    
+    return null;
   };
+
+  const handleMintToken = async () => {
+    setError("");
+    setIsMinting(true);
+
+    if (!isConnected) {
+      setError("Please connect your wallet first");
+      setIsMinting(false);
+      return;
+    }
+
+    const validationError = validateTokenParams(tokenParams);
+    if (validationError) {
+      setError(validationError);
+      setIsMinting(false);
+      return;
+    }
+
+    try {
+      // For this demo, we'll use a simple factory contract address
+      // In production, you'd deploy your own factory contract
+      const factoryAddress = "0x0000000000000000000000000000000000000000"; // Replace with actual factory
+      
+      await writeContract({
+        address: factoryAddress as `0x${string}`,
+        abi: TOKEN_CONTRACT_ABI,
+        functionName: "deployToken",
+        args: [
+          tokenParams.name,
+          tokenParams.symbol,
+          tokenParams.decimals,
+          parseEther(tokenParams.totalSupply)
+        ],
+      });
+    } catch (err) {
+      setError(`Failed to mint token: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setIsMinting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isConfirmed && hash) {
+      setMintedTokenAddress(hash); // In reality, you'd get the deployed contract address
+      setIsMinting(false);
+      // Navigate to success page with token details
+      router.push(`/success?address=${hash}&name=${encodeURIComponent(tokenParams.name)}&symbol=${encodeURIComponent(tokenParams.symbol)}`);
+    }
+  }, [isConfirmed, hash, router, tokenParams.name, tokenParams.symbol]);
 
   return (
     <div className={styles.container}>
@@ -90,29 +237,133 @@ export default function Home() {
       </button>
       
       <div className={styles.content}>
-        <div className={styles.waitlistForm}>
-          <h1 className={styles.title}>Join {minikitConfig.miniapp.name.toUpperCase()}</h1>
+        <div className={styles.tokenForm}>
+          <h1 className={styles.title}>🚀 {minikitConfig.miniapp.name}</h1>
           
           <p className={styles.subtitle}>
-             Hey {context?.user?.displayName || "there"}, Get early access and be the first to experience the future of<br />
-            crypto marketing strategy.
+            Create your own token on Base network in seconds!
           </p>
 
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <input
-              type="email"
-              placeholder="Your amazing email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={styles.emailInput}
-            />
-            
-            {error && <p className={styles.error}>{error}</p>}
-            
-            <button type="submit" className={styles.joinButton}>
-              JOIN WAITLIST
-            </button>
-          </form>
+          {!isConnected ? (
+            <div className={styles.connectWallet}>
+              <p>Please connect your wallet to mint tokens</p>
+              <p className={styles.networkInfo}>Network: Base Mainnet</p>
+            </div>
+          ) : (
+            <form className={styles.form}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="tokenName">Token Name</label>
+                <input
+                  id="tokenName"
+                  type="text"
+                  placeholder="My Awesome Token"
+                  value={tokenParams.name}
+                  onChange={(e) => setTokenParams(prev => ({ ...prev, name: e.target.value }))}
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="tokenSymbol">Symbol</label>
+                <input
+                  id="tokenSymbol"
+                  type="text"
+                  placeholder="MAT"
+                  value={tokenParams.symbol}
+                  onChange={(e) => setTokenParams(prev => ({ ...prev, symbol: e.target.value.toUpperCase() }))}
+                  className={styles.input}
+                  maxLength={10}
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="totalSupply">Total Supply</label>
+                <input
+                  id="totalSupply"
+                  type="text"
+                  placeholder="1000000"
+                  value={tokenParams.totalSupply}
+                  onChange={(e) => setTokenParams(prev => ({ ...prev, totalSupply: e.target.value }))}
+                  className={styles.input}
+                />
+                <small className={styles.inputHint}>Enter the total number of tokens to mint</small>
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="decimals">Decimals</label>
+                <select
+                  id="decimals"
+                  value={tokenParams.decimals}
+                  onChange={(e) => setTokenParams(prev => ({ ...prev, decimals: parseInt(e.target.value) }))}
+                  className={styles.select}
+                >
+                  {Array.from({ length: 19 }, (_, i) => (
+                    <option key={i} value={i}>{i}</option>
+                  ))}
+                </select>
+                <small className={styles.inputHint}>Number of decimal places (18 is standard)</small>
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="description">Description (Optional)</label>
+                <textarea
+                  id="description"
+                  placeholder="Describe your token..."
+                  value={tokenParams.description}
+                  onChange={(e) => setTokenParams(prev => ({ ...prev, description: e.target.value }))}
+                  className={styles.textarea}
+                  rows={3}
+                />
+              </div>
+
+              {error && <p className={styles.error}>{error}</p>}
+              
+              {contractError && <p className={styles.error}>Contract Error: {contractError.message}</p>}
+
+              <button 
+                type="button" 
+                onClick={handleMintToken}
+                className={styles.mintButton}
+                disabled={isPending || isConfirming || isMinting}
+              >
+                {isPending ? "Preparing Transaction..." : 
+                 isConfirming ? "Confirming Transaction..." :
+                 isMinting ? "Minting Token..." : 
+                 "Mint Token"}
+              </button>
+
+              {hash && (
+                <div className={styles.transactionInfo}>
+                  <p>Transaction Hash: {hash.slice(0, 10)}...{hash.slice(-8)}</p>
+                  <a 
+                    href={`https://basescan.org/tx/${hash}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={styles.explorerLink}
+                  >
+                    View on BaseScan
+                  </a>
+                </div>
+              )}
+            </form>
+          )}
+
+          <div className={styles.tokenPreview}>
+            <h3>Token Preview</h3>
+            {tokenParams.name && tokenParams.symbol && (
+              <div className={styles.previewCard}>
+                <div className={styles.tokenInfo}>
+                  <span className={styles.tokenName}>{tokenParams.name}</span>
+                  <span className={styles.tokenSymbol}>{tokenParams.symbol}</span>
+                </div>
+                <div className={styles.tokenDetails}>
+                  <p>Supply: {tokenParams.totalSupply || "0"} tokens</p>
+                  <p>Decimals: {tokenParams.decimals}</p>
+                  {tokenParams.description && <p>Description: {tokenParams.description}</p>}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

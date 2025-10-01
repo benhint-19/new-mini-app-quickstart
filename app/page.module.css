@@ -45,6 +45,12 @@
   width: 100%;
 }
 
+.tokenForm {
+  text-align: center;
+  max-width: 700px;
+  width: 100%;
+}
+
 .title {
   font-size: clamp(2.5rem, 6vw, 4rem);
   font-weight: 700;
@@ -69,8 +75,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
   width: 100%;
+  text-align: left;
 }
 
 .emailInput {
@@ -123,4 +130,178 @@
   background: #f5d73a;
   transform: translateY(-2px);
   box-shadow: 0 6px 25px rgba(247, 217, 84, 0.4);
+}
+
+/* New token minting styles */
+.connectWallet {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  backdrop-filter: blur(10px);
+}
+
+.networkInfo {
+  color: #0052FF;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.inputGroup label {
+  color: white;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #0052FF;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 20px rgba(0, 82, 255, 0.2);
+}
+
+.select {
+  cursor: pointer;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.inputHint {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  text-align: left;
+}
+
+.mintButton {
+  background: linear-gradient(135deg, #0052FF 0%, #0041CC 100%);
+  color: white;
+  border: none;
+  padding: 1.2rem 3rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 82, 255, 0.3);
+  min-width: 200px;
+}
+
+.mintButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0041CC 0%, #003399 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0, 82, 255, 0.4);
+}
+
+.mintButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.transactionInfo {
+  background: rgba(0, 82, 255, 0.1);
+  border: 1px solid rgba(0, 82, 255, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.explorerLink {
+  color: #0052FF;
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  display: inline-block;
+}
+
+.explorerLink:hover {
+  text-decoration: underline;
+}
+
+.tokenPreview {
+  margin-top: 3rem;
+  text-align: left;
+}
+
+.tokenPreview h3 {
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.previewCard {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.tokenInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tokenName {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+}
+
+.tokenSymbol {
+  background: #0052FF;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.tokenDetails p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
 }
