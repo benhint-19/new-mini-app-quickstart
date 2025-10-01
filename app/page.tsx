@@ -15,16 +15,6 @@ interface TokenParams {
   description: string;
 }
 
-interface AuthResponse {
-  success: boolean;
-  user?: {
-    fid: number;
-    issuedAt?: number;
-    expiresAt?: number;
-  };
-  message?: string;
-}
-
 // Simple ERC-20 Token Contract ABI (minimal implementation)
 const TOKEN_CONTRACT_ABI = [
   {
