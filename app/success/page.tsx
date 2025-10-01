@@ -56,7 +56,7 @@ export default function Success() {
           {tokenAddress ? (
             <div className={styles.tokenDetails}>
               <p className={styles.subtitle}>
-                Your token <strong>"{tokenName}"</strong> ({tokenSymbol}) has been successfully deployed on Base network!
+                Your token <strong>&quot;{tokenName}&quot;</strong> ({tokenSymbol}) has been successfully deployed on Base network!
               </p>
               <div className={styles.tokenInfo}>
                 <div className={styles.infoRow}>

@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useQuickAuth, useMiniKit } from "@coinbase/onchainkit/minikit";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { parseEther, formatUnits } from "viem";
+import { parseEther } from "viem";
 import { useRouter } from "next/navigation";
 import { minikitConfig } from "../minikit.config";
 import styles from "./page.module.css";
@@ -136,8 +136,8 @@ const TOKEN_CONTRACT_ABI = [
 ] as const;
 
 export default function Home() {
-  const { isFrameReady, setFrameReady, context } = useMiniKit();
-  const { address, isConnected } = useAccount();
+  const { isFrameReady, setFrameReady } = useMiniKit();
+  const { isConnected } = useAccount();
   const [tokenParams, setTokenParams] = useState<TokenParams>({
     name: "",
     symbol: "",
@@ -147,7 +147,6 @@ export default function Home() {
   });
   const [error, setError] = useState("");
   const [isMinting, setIsMinting] = useState(false);
-  const [mintedTokenAddress, setMintedTokenAddress] = useState<string>("");
 
   const { data: hash, writeContract, isPending, error: contractError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -160,11 +159,6 @@ export default function Home() {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady]);
-
-  const { data: authData, isLoading: isAuthLoading, error: authError } = useQuickAuth<AuthResponse>(
-    "/api/auth",
-    { method: "GET" }
-  );
 
   const validateTokenParams = (params: TokenParams): string | null => {
     if (!params.name.trim()) return "Token name is required";
@@ -223,12 +217,11 @@ export default function Home() {
 
   useEffect(() => {
     if (isConfirmed && hash) {
-      setMintedTokenAddress(hash); // In reality, you'd get the deployed contract address
       setIsMinting(false);
       // Navigate to success page with token details
       router.push(`/success?address=${hash}&name=${encodeURIComponent(tokenParams.name)}&symbol=${encodeURIComponent(tokenParams.symbol)}`);
     }
-  }, [isConfirmed, hash, router, tokenParams.name, tokenParams.symbol]);
+  }, [isConfirmed, hash, tokenParams.name, tokenParams.symbol]);
 
   return (
     <div className={styles.container}>
