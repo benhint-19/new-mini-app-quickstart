@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from 'react';
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
 import { useSearchParams } from 'next/navigation';
 import { minikitConfig } from "../../minikit.config";
 import styles from "./page.module.css";
 
-export default function Success() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const { composeCastAsync } = useComposeCast();
   
@@ -94,5 +95,13 @@ export default function Success() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Success() {
+  return (
+    <Suspense fallback={<div className={styles.container}>Loading...</div>}>
+      <SuccessContent />
+    </Suspense>
   );
 }

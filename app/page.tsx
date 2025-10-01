@@ -131,7 +131,7 @@ export default function Home() {
       // Navigate to success page with token details
       router.push(`/success?address=${hash}&name=${encodeURIComponent(tokenParams.name)}&symbol=${encodeURIComponent(tokenParams.symbol)}`);
     }
-  }, [isConfirmed, hash, tokenParams.name, tokenParams.symbol]);
+  }, [isConfirmed, hash, router, tokenParams.name, tokenParams.symbol]);
 
   return (
     <div className={styles.container}>
