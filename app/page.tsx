@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useMiniKit, ConnectButton } from "@coinbase/onchainkit/minikit";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { ConnectButton } from "@coinbase/onchainkit";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther } from "viem";
 import { useRouter } from "next/navigation";
