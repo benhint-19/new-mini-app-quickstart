@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { useMiniKit, ConnectButton } from "@coinbase/onchainkit/minikit";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther } from "viem";
 import { useRouter } from "next/navigation";
@@ -151,6 +151,7 @@ export default function Home() {
             <div className={styles.connectWallet}>
               <p>Please connect your wallet to mint tokens</p>
               <p className={styles.networkInfo}>Network: Base Mainnet</p>
+              <ConnectButton />
             </div>
           ) : (
             <form className={styles.form}>
