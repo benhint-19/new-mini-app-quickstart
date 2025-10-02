@@ -148,6 +148,13 @@
   margin-top: 0.5rem;
 }
 
+.connectHint {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  font-style: italic;
+}
+
 .inputGroup {
   display: flex;
   flex-direction: column;
